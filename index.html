@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sachis Haven Music Box</title>
+
+<style>
+
+/* =========================
+BACKGROUND
+========================= */
+
+body{
+margin:0;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:
+radial-gradient(circle at 30% 20%, #5a0f1a, #0b0b0d 70%);
+font-family:serif;
+overflow:hidden;
+}
+
+/* =========================
+MUSIC BOX BODY
+========================= */
+
+.music-box{
+position:relative;
+width:340px;
+height:240px;
+
+background:
+linear-gradient(145deg,#7a4b2a,#4b2c18);
+
+border-radius:14px;
+
+box-shadow:
+0 20px 50px rgba(0,0,0,.7),
+inset 0 4px 10px rgba(255,255,255,.08),
+inset 0 -8px 20px rgba(0,0,0,.6);
+}
+
+/* =========================
+LID
+========================= */
+
+.lid{
+position:absolute;
+top:-120px;
+left:0;
+width:100%;
+height:120px;
+
+background:
+linear-gradient(145deg,#8b5a34,#4d2c18);
+
+border-radius:12px 12px 0 0;
+
+transform-origin:bottom;
+transform:rotateX(0deg);
+
+transition:transform .6s ease;
+
+box-shadow:
+inset 0 4px 10px rgba(255,255,255,.1),
+0 10px 20px rgba(0,0,0,.6);
+
+display:flex;
+justify-content:center;
+align-items:center;
+overflow:hidden;
+}
+
+.music-box.open .lid{
+transform:rotateX(120deg);
+}
+
+/* =========================
+LID PHOTO SLIDES
+========================= */
+
+.lid img{
+width:90%;
+height:90%;
+object-fit:cover;
+border-radius:10px;
+opacity:0;
+transition:opacity .6s;
+}
+
+.lid img.active{
+opacity:1;
+}
+
+/* =========================
+CAT BALLERINA
+========================= */
+
+.ballerina{
+position:absolute;
+top:-20px;
+left:50%;
+transform:translateX(-50%);
+width:120px;
+pointer-events:none;
+}
+
+.ballerina img{
+width:100%;
+transform-origin:bottom center;
+}
+
+/* =========================
+CRANK
+========================= */
+
+.crank{
+position:absolute;
+left:-60px;
+top:110px;
+
+width:60px;
+height:60px;
+
+border-radius:50%;
+
+background:
+radial-gradient(circle at 30% 30%,#e5e5e5,#8a8a8a);
+
+box-shadow:
+inset 0 4px 6px rgba(0,0,0,.6),
+inset 0 -3px 4px rgba(255,255,255,.5),
+0 6px 15px rgba(0,0,0,.8);
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+cursor:grab;
+
+font-size:22px;
+user-select:none;
+}
+
+.crank:active{
+cursor:grabbing;
+}
+
+/* =========================
+FIREFLIES
+========================= */
+
+canvas{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+pointer-events:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<canvas id="fireflies"></canvas>
+
+<div class="music-box" id="box">
+
+<div class="lid" id="lid">
+<img class="slide active">
+</div>
+
+<div class="ballerina">
+<img id="cat"
+src="https://media.tenor.com/YGg1Yq3BPxkAAAAi/cat-spin.gif">
+</div>
+
+<div class="crank" id="crank">✶</div>
+
+</div>
+
+<audio id="audio" preload="auto" src="audio/freecompress-sachiiii.mp3"></audio>
+
+<script>
+
+/* =========================
+FILES
+========================= */
+
+const photos = [
+
+"photos/Screenshot_20260315_235941_com_hihonor_photos_SlotAlbumActivity.jpg",
+
+"photos/Screenshot_20260315_235921_com_hihonor_photos_SlotAlbumActivity.jpg",
+
+"photos/Screenshot_20260315_235908_com_hihonor_photos_SlotAlbumActivity.jpg",
+
+"photos/Screenshot_20260315_235840_com_hihonor_photos_SlotAlbumActivity.jpg",
+
+"photos/Screenshot_20260315_235818_com_hihonor_photos_SlotAlbumActivity.jpg",
+
+"photos/Screenshot_20260315_235803_com_hihonor_photos_SlotAlbumActivity.jpg",
+
+"photos/Screenshot_20260315_235750_com_hihonor_photos_SlotAlbumActivity.jpg",
+
+"photos/Screenshot_20260315_235657_com_hihonor_photos_SlotAlbumActivity.jpg"
+
+]
+
+const slide = document.querySelector(".slide")
+const audio = document.getElementById("audio")
+const crank = document.getElementById("crank")
+const box = document.getElementById("box")
+const cat = document.getElementById("cat")
+
+/* safer image loader */
+
+if(photos.length > 0){
+slide.src = photos[0]
+}
+
+/* =========================
+STATE
+========================= */
+
+let rotation = 0
+let index = 0
+let interacting = false
+let spinSpeed = 0
+
+/* =========================
+CRANK INTERACTION
+========================= */
+
+crank.addEventListener("pointerdown", e=>{
+
+crank.setPointerCapture(e.pointerId)
+interacting = true
+
+box.classList.add("open")
+
+audio.currentTime = 0
+audio.play().catch(()=>{})
+
+})
+
+crank.addEventListener("pointermove", e=>{
+
+if(!interacting) return
+if(e.buttons !== 1) return
+
+rotation += e.movementX
+spinSpeed = Math.abs(e.movementX)*4
+
+crank.style.transform = `rotate(${rotation}deg)`
+
+/* change image */
+
+if(Math.abs(rotation)%120 < 4){
+
+index = (index+1)%photos.length
+
+slide.classList.remove("active")
+
+setTimeout(()=>{
+
+slide.src = photos[index]
+slide.onload = ()=> slide.classList.add("active")
+
+},200)
+
+}
+
+})
+
+crank.addEventListener("pointerup", ()=>{
+
+interacting=false
+spinSpeed=0
+
+audio.pause()
+
+box.classList.remove("open")
+
+})
+
+/* =========================
+CAT SPIN LOOP
+========================= */
+
+function animate(){
+
+if(spinSpeed>0){
+cat.style.transform = `rotate(${rotation*3}deg)`
+}
+
+requestAnimationFrame(animate)
+
+}
+
+animate()
+
+/* =========================
+FIREFLIES
+========================= */
+
+const canvas=document.getElementById("fireflies")
+const ctx=canvas.getContext("2d")
+
+canvas.width=innerWidth
+canvas.height=innerHeight
+
+let flies=[]
+
+for(let i=0;i<30;i++){
+
+flies.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+dx:(Math.random()-0.5)*0.5,
+dy:(Math.random()-0.5)*0.5,
+size:2+Math.random()*2
+})
+
+}
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+flies.forEach(f=>{
+
+f.x+=f.dx
+f.y+=f.dy
+
+ctx.beginPath()
+ctx.arc(f.x,f.y,f.size,0,Math.PI*2)
+
+ctx.fillStyle="rgba(255,240,150,.9)"
+ctx.shadowBlur=10
+ctx.shadowColor="gold"
+
+ctx.fill()
+
+})
+
+requestAnimationFrame(draw)
+
+}
+
+draw()
+
+</script>
+
+</body>
+  </html>
